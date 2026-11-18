@@ -90,6 +90,16 @@
       <span>共 {{ total }} 条{{ meta.name }}记录</span>
       <span v-if="errorMessage" class="error-text">{{ errorMessage }}</span>
     </footer>
+
+    <TopologyDeployPanel
+      v-if="meta.key === 'task_topology'"
+      :rows="rows"
+      @changed="reload"
+    />
+    <ThroughputDegradationPanel
+      v-if="meta.key === 'throughput_mgr'"
+      @changed="reload"
+    />
   </section>
 </template>
 
@@ -103,6 +113,8 @@ import {
   moduleMeta,
   runAction as applyAction,
 } from '@/api/backend-service'
+import ThroughputDegradationPanel from '@/components/ThroughputDegradationPanel.vue'
+import TopologyDeployPanel from '@/components/TopologyDeployPanel.vue'
 import type { EntryRow } from '@/data/types'
 
 const props = defineProps<{ moduleKey: string }>()

@@ -12,6 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.routers import ROUTERS
+from app.routers import topology_ops
 from app.store import store
 
 app = FastAPI(title="实时计算服务中心", version="2.0.0")
@@ -89,6 +90,10 @@ def list_failures(module: str | None = None) -> dict[str, Any]:
     """列出失败恢复记录。"""
     return store.get_failure_stats()
 
+
+# 拓扑部署联动路由（/api/topology-batch、/api/task_topology/{id}/deploy 等）
+# 必须在通用资源路由 /api/{module} 之前注册，否则固定路径会被动态路径抢先匹配。
+app.include_router(topology_ops.router)
 
 # 资源路由含 /api/{module}，必须放在 health / overview 之后注册，
 # 否则固定路径会被动态路径抢先匹配。

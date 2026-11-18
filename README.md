@@ -79,5 +79,26 @@ npm run dev
 - 列表接口统一返回 `{ items, total, page, size }`，动作接口统一返回 `{ ok, message }`。
 - 状态流转只允许在 `app/services` 里改，路由层不做业务判断。
 
+## 拓扑部署 ↔ 吞吐降级联动
+
+在通用资源路由之外，补充了一组联动接口（`app/routers/topology_ops.py`，
+注册在 `/api/{module}` 之前）：
+
+- `POST /api/task_topology/{id}/deploy`：读取拓扑配置部署算子链，逐节点就绪检查后
+  发布拓扑运行数据（版本快照），并联动写入状态存储；节点未全部就绪不发布运行版本，
+  同一拓扑重复部署只保留一个当前运行快照。
+- `GET /api/task_topology/{id}/runtime`：拓扑运行数据（当前版本、降级节点、历史版本）。
+- `POST /api/throughput_mgr/backpressure`：读取部署后的拓扑运行数据，背压触发时
+  写入降级状态清单并保留拓扑版本；支持 `partial` 局部降级与 `unified` 统一降级。
+- `GET /api/throughput_mgr/degradations`：降级状态清单，按拓扑/版本核对。
+- `POST /api/topology-batch`（序号13）：批量提交多条拓扑运行数据，一次提交保留整组
+  结果（组级版本 + 逐条版本）；幂等键去重，并发重试只接收一组版本；事务异常回滚整组。
+- `GET /api/topology-batch[/group_id]`：整组处理台账与逐条成功失败详情。
+- `GET /api/topology-batch-verify/{topology}/{version}`：按拓扑版本核对运行数据与降级清单。
+
+前端对应入口：任务拓扑页（部署算子链面板）、吞吐管理页（背压触发与降级清单面板）、
+侧边导航「批量结果」页（批量选择、台账、逐条详情、按版本核对）。
+
+
 领域：数据工程
 子方向：数据分析与数据应用
